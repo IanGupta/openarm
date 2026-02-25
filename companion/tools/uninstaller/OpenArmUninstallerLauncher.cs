@@ -45,6 +45,8 @@ internal static class Program
     private static int Main(string[] args)
     {
         var silent = args.Any(IsSilentArg);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
         try
         {
             var entry = FindBestEntry();
@@ -108,6 +110,20 @@ internal static class Program
                 WorkingDirectory = ResolveWorkingDirectory(parsed.FileName, entry.InstallLocation)
             };
 
+            if (!silent)
+            {
+                var confirmResult = MessageBox.Show(
+                    "This will remove OpenArm from this computer. Continue?",
+                    "OpenArm Uninstaller",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question
+                );
+                if (confirmResult != DialogResult.Yes)
+                {
+                    return 0;
+                }
+            }
+
             using (var process = Process.Start(startInfo))
             {
                 if (process == null)
@@ -123,7 +139,76 @@ internal static class Program
                     }
                     return 5;
                 }
-                process.WaitForExit();
+
+                if (!silent)
+                {
+                    using (var progress = new Form())
+                    {
+                        progress.Text = "OpenArm Uninstaller";
+                        progress.Width = 480;
+                        progress.Height = 160;
+                        progress.FormBorderStyle = FormBorderStyle.FixedDialog;
+                        progress.StartPosition = FormStartPosition.CenterScreen;
+                        progress.MaximizeBox = false;
+                        progress.MinimizeBox = false;
+                        progress.ControlBox = false;
+
+                        var label = new Label();
+                        label.Text = "Uninstalling OpenArm...";
+                        label.AutoSize = true;
+                        label.Left = 24;
+                        label.Top = 20;
+
+                        var bar = new ProgressBar();
+                        bar.Left = 24;
+                        bar.Top = 52;
+                        bar.Width = 420;
+                        bar.Style = ProgressBarStyle.Marquee;
+                        bar.MarqueeAnimationSpeed = 24;
+
+                        progress.Controls.Add(label);
+                        progress.Controls.Add(bar);
+
+                        var timer = new Timer();
+                        timer.Interval = 250;
+                        timer.Tick += delegate
+                        {
+                            if (process.HasExited)
+                            {
+                                timer.Stop();
+                                progress.Close();
+                            }
+                        };
+                        timer.Start();
+                        progress.ShowDialog();
+                    }
+                }
+                else
+                {
+                    process.WaitForExit();
+                }
+
+                if (!silent)
+                {
+                    if (process.ExitCode == 0)
+                    {
+                        MessageBox.Show(
+                            "OpenArm was uninstalled successfully.",
+                            "OpenArm Uninstaller",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information
+                        );
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "Uninstaller exited with code " + process.ExitCode + ".",
+                            "OpenArm Uninstaller",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning
+                        );
+                    }
+                }
                 return process.ExitCode;
             }
         }

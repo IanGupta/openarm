@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld("openArm", {
   sendChat: (payload) => ipcRenderer.invoke("gateway:chatSend", payload),
   chatHistory: (payload) => ipcRenderer.invoke("gateway:chatHistory", payload),
   wakeOnLan: (payload) => ipcRenderer.invoke("wol:send", payload),
+  checkUpdates: (payload) => ipcRenderer.invoke("updates:checkNow", payload),
   onStateUpdate: (callback) => subscribe("state:update", callback),
   onLogEntry: (callback) => subscribe("log:entry", callback),
   onChatEvent: (callback) => subscribe("chat:event", callback),

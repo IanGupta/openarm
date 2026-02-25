@@ -39,7 +39,11 @@ function createDefaultSettings() {
     wolDevices: {},
     launchOnStartup: true,
     minimizeToTray: true,
-    closeToTray: true
+    closeToTray: true,
+    updateChecksEnabled: true,
+    updatePromptEnabled: true,
+    updateCheckIntervalHours: 24,
+    lastUpdateCheckAt: ""
   };
 }
 
@@ -134,6 +138,10 @@ function normalizeSettings(input) {
   merged.launchOnStartup = merged.launchOnStartup !== undefined ? Boolean(merged.launchOnStartup) : true;
   merged.minimizeToTray = merged.minimizeToTray !== undefined ? Boolean(merged.minimizeToTray) : true;
   merged.closeToTray = merged.closeToTray !== undefined ? Boolean(merged.closeToTray) : true;
+  merged.updateChecksEnabled = merged.updateChecksEnabled !== undefined ? Boolean(merged.updateChecksEnabled) : true;
+  merged.updatePromptEnabled = merged.updatePromptEnabled !== undefined ? Boolean(merged.updatePromptEnabled) : true;
+  merged.updateCheckIntervalHours = Math.max(6, Math.min(168, Number(merged.updateCheckIntervalHours) || 24));
+  merged.lastUpdateCheckAt = sanitizeText(merged.lastUpdateCheckAt, 64);
 
   return merged;
 }

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require("electron");
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog, shell } = require("electron");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const net = require("node:net");
@@ -52,6 +52,7 @@ let gatewayRelayServer = null;
 let gatewayRelaySpec = null;
 let tray = null;
 let isQuitting = false;
+let updateCheckTimer = null;
 
 const OPENARM_NODE_COMMANDS = [
   "openarm.file.read",
@@ -1218,6 +1219,98 @@ async function maybeAutoEnableOpenArmAgentIntegration(trigger = "operator.connec
   }
 }
 
+function parseVersion(value) {
+  const cleaned = (value || "").toString().trim().replace(/^v/i, "");
+  const parts = cleaned.split(".").map((part) => Number(part.replace(/[^0-9]/g, "")) || 0);
+  while (parts.length < 3) parts.push(0);
+  return { raw: cleaned, parts: parts.slice(0, 3) };
+}
+
+function isVersionNewer(latest, current) {
+  const a = parseVersion(latest).parts;
+  const b = parseVersion(current).parts;
+  for (let i = 0; i < 3; i += 1) {
+    if (a[i] > b[i]) return true;
+    if (a[i] < b[i]) return false;
+  }
+  return false;
+}
+
+async function checkForUpdates({ force = false, interactive = false } = {}) {
+  const settings = state.settings || {};
+  if (!force && settings.updateChecksEnabled === false) {
+    return { skipped: true, reason: "disabled" };
+  }
+  const intervalMs = Math.max(6, Math.min(168, Number(settings.updateCheckIntervalHours) || 24)) * 60 * 60 * 1000;
+  const lastCheckMs = settings.lastUpdateCheckAt ? Date.parse(settings.lastUpdateCheckAt) : 0;
+  if (!force && lastCheckMs && Date.now() - lastCheckMs < intervalMs) {
+    return { skipped: true, reason: "interval" };
+  }
+
+  const currentVersion = app.getVersion();
+  let latestVersion = currentVersion;
+  let releaseUrl = "https://github.com/IanGupta/openarm/releases/latest";
+  let hasUpdate = false;
+  let error = "";
+
+  try {
+    const response = await fetch("https://api.github.com/repos/IanGupta/openarm/releases/latest", {
+      headers: { "User-Agent": `OpenArm/${currentVersion}`, Accept: "application/vnd.github+json" }
+    });
+    if (!response.ok) {
+      throw new Error(`Release check failed (${response.status})`);
+    }
+    const payload = await response.json();
+    latestVersion = (payload?.tag_name || payload?.name || currentVersion).toString().replace(/^v/i, "");
+    releaseUrl = payload?.html_url || releaseUrl;
+    hasUpdate = isVersionNewer(latestVersion, currentVersion);
+  } catch (err) {
+    error = makeErrorMessage(err);
+  }
+
+  state.settings = await saveSettings(configPath(), {
+    ...state.settings,
+    lastUpdateCheckAt: nowIso(),
+    latestKnownVersion: latestVersion
+  });
+  publishState();
+
+  if (!error && hasUpdate && (interactive || settings.updatePromptEnabled !== false)) {
+    const choice = await dialog.showMessageBox({
+      type: "info",
+      title: "OpenArm update available",
+      message: `OpenArm ${latestVersion} is available (you are on ${currentVersion}).`,
+      detail: "Open release page to download and install the update?",
+      buttons: ["Open Release", "Later"],
+      defaultId: 0,
+      cancelId: 1
+    });
+    if (choice.response === 0) {
+      await shell.openExternal(releaseUrl);
+    }
+  }
+
+  return {
+    ok: !error,
+    currentVersion,
+    latestVersion,
+    releaseUrl,
+    hasUpdate,
+    checkedAt: state.settings.lastUpdateCheckAt,
+    error
+  };
+}
+
+function scheduleUpdateChecks() {
+  if (updateCheckTimer) {
+    clearInterval(updateCheckTimer);
+    updateCheckTimer = null;
+  }
+  updateCheckTimer = setInterval(() => {
+    void checkForUpdates({ force: false, interactive: false }).catch(() => {});
+  }, 60 * 60 * 1000);
+}
+
 function detectInstallerRole() {
   if (process.platform !== "win32") {
     return "";
@@ -1644,6 +1737,7 @@ async function saveSettingsPatch(patch) {
   });
   state.settings = await saveSettings(configPath(), state.settings);
   syncAppBehaviorSettings();
+  scheduleUpdateChecks();
   publishState();
   return state.settings;
 }
@@ -1678,6 +1772,15 @@ ipcMain.handle("wol:send", async (_event, payload) => {
     const address = sanitizeText(payload?.address || payload?.broadcast || payload?.broadcastAddress, 120) || "";
     const port = Number(payload?.port) > 0 ? Number(payload.port) : 9;
     const result = await sendWakeOnLan({ mac, address, port });
+    return ok({ result });
+  } catch (error) {
+    return fail(error);
+  }
+});
+
+ipcMain.handle("updates:checkNow", async (_event, payload) => {
+  try {
+    const result = await checkForUpdates({ force: Boolean(payload?.force), interactive: Boolean(payload?.interactive) });
     return ok({ result });
   } catch (error) {
     return fail(error);
@@ -2065,6 +2168,8 @@ app.whenReady().then(async () => {
   approvalsStore = createExecApprovalsStore(approvalsPath());
   createWindow();
   publishState();
+  scheduleUpdateChecks();
+  setTimeout(() => { void checkForUpdates({ force: false, interactive: false }).catch(() => {}); }, 12_000);
 
   if (state.settings.onboardingComplete) {
     if (state.settings.mode === "arm" && state.settings.autoConnectArm) {

@@ -196,6 +196,10 @@ const elements = {
   launchOnStartupInput: document.querySelector("#launchOnStartupInput"),
   minimizeToTrayInput: document.querySelector("#minimizeToTrayInput"),
   closeToTrayInput: document.querySelector("#closeToTrayInput"),
+  updateChecksEnabledInput: document.querySelector("#updateChecksEnabledInput"),
+  updatePromptEnabledInput: document.querySelector("#updatePromptEnabledInput"),
+  checkUpdatesNowBtn: document.querySelector("#checkUpdatesNowBtn"),
+  updateStatusText: document.querySelector("#updateStatusText"),
   // Command dialog
   commandDialog: document.querySelector("#commandDialog"),
   commandDialogClose: document.querySelector("#commandDialogClose"),
@@ -2396,6 +2400,15 @@ function fillGatewayInputsFromSettings() {
   if (elements.launchOnStartupInput) elements.launchOnStartupInput.checked = settings.launchOnStartup !== false;
   if (elements.minimizeToTrayInput) elements.minimizeToTrayInput.checked = settings.minimizeToTray !== false;
   if (elements.closeToTrayInput) elements.closeToTrayInput.checked = settings.closeToTray !== false;
+  if (elements.updateChecksEnabledInput) elements.updateChecksEnabledInput.checked = settings.updateChecksEnabled !== false;
+  if (elements.updatePromptEnabledInput) elements.updatePromptEnabledInput.checked = settings.updatePromptEnabled !== false;
+  if (elements.updateStatusText) {
+    const latest = settings.latestKnownVersion || "";
+    const last = settings.lastUpdateCheckAt || "";
+    elements.updateStatusText.textContent = latest
+      ? `Last check: ${last ? new Date(last).toLocaleString() : "recent"} • Latest: ${latest}`
+      : (last ? `Last check: ${new Date(last).toLocaleString()}` : "Not checked yet.");
+  }
 }
 
 function updateSummary() {
@@ -3954,6 +3967,9 @@ elements.advancedSave?.addEventListener("click", async () => {
       launchOnStartup: Boolean(elements.launchOnStartupInput?.checked),
       minimizeToTray: Boolean(elements.minimizeToTrayInput?.checked),
       closeToTray: Boolean(elements.closeToTrayInput?.checked),
+      updateChecksEnabled: Boolean(elements.updateChecksEnabledInput?.checked),
+      updatePromptEnabled: Boolean(elements.updatePromptEnabledInput?.checked),
+      updateCheckIntervalHours: 24,
     };
     const urlErr = validateGatewayUrl(patch.gatewayUrl);
     if (urlErr) {

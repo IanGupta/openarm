@@ -183,6 +183,16 @@
       <label class="setting-check"><input id="closeToTrayInput" type="checkbox" /> Keep running in background when window is closed</label>
     </div>
 
+    <div class="mode-card">
+      <p class="mode-card-title">Updates</p>
+      <label class="setting-check"><input id="updateChecksEnabledInput" type="checkbox" /> Check for updates automatically (daily)</label>
+      <label class="setting-check"><input id="updatePromptEnabledInput" type="checkbox" /> Show update prompt when new version is available</label>
+      <div class="inline-actions">
+        <button id="checkUpdatesNowBtn" class="ghost" type="button">Check for updates now</button>
+        <span id="updateStatusText" class="muted">Not checked yet.</span>
+      </div>
+    </div>
+
     <div class="utilities-row">
       <button id="utilitiesQuickCommandBtn" class="ghost" type="button">Quick Command...</button>
       <button id="utilitiesViewLogsBtn" class="ghost" type="button">View Logs...</button>
