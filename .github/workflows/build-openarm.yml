@@ -1,0 +1,59 @@
+name: Build OpenArm
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (companion)
+        run: npm ci --prefix companion
+
+      - name: Build (Windows)
+        run: npm --prefix companion run build:win
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openarm-windows
+          path: |
+            companion/dist/OpenArm-Setup-*.exe
+            companion/dist/OpenArm-Setup-*.exe.blockmap
+            companion/dist/OpenArm-Uninstaller-*.exe
+
+  mac:
+    runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (companion)
+        run: npm ci --prefix companion
+
+      - name: Build (macOS)
+        run: npm --prefix companion run build:mac
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: openarm-macos
+          path: |
+            companion/dist/OpenArm-*-mac-*.dmg
+            companion/dist/OpenArm-*-mac-*.zip
+

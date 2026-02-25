@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+*.log
+*.local
+.env
+.env.*
+!.env.example
+coverage/
+tmp/
+*.tmp
+Thumbs.db
+.tmp-openclaw-upstream/
+
+# local/private build scratch
+.tmp-pi-coding-agent/
+companion/.tmp-mac-asar/
+*.bak
+
+# release binaries are attached to GitHub Releases, not stored in git
+releases/v1.0.0/*.zip
+releases/v1.0.0/*.exe
+releases/v1.0.0/*.gz
+

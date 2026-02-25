@@ -1,0 +1,16 @@
+{
+  "name": "openarm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenArm companion system for OpenClaw Gateway nodes",
+  "scripts": {
+    "setup": "cd companion && npm install",
+    "dev:companion": "npm --prefix companion run dev",
+    "start:companion": "npm --prefix companion run start",
+    "build:companion": "npm --prefix companion run build:win",
+    "build:companion:mac": "npm --prefix companion run build:mac"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
