@@ -8,6 +8,18 @@ It supports two roles:
 
 OpenArm is designed for secure, low-friction remote workflows: setup wizard, pairing, connectivity checks, command execution, file operations, and Wake-on-LAN support.
 
+![OpenArm Demo](docs/assets/openarm-demo.gif)
+
+> If the GIF does not load on your client, open `docs/assets/openarm-demo.gif` directly.
+
+---
+
+## Why OpenArm
+
+- **Agent-native remote ops**: Built to work with OpenClaw node workflows, not just human-only remote desktop.
+- **Fast onboarding**: Arm/Hub setup wizard + Pair PIN flow for quick enrollment.
+- **Production distribution**: Installer artifacts and checksum verification included in releases.
+
 ---
 
 ## Highlights
@@ -20,6 +32,26 @@ OpenArm is designed for secure, low-friction remote workflows: setup wizard, pai
   - Minimize to tray
   - Keep running when window closes
 - OpenClaw-aware integration helpers for node command workflows
+
+---
+
+## 2-minute quick start
+
+```powershell
+# 1) install deps
+npm run setup
+
+# 2) start the app
+npm run dev:companion
+
+# 3) build installer (optional)
+npm run build:companion
+```
+
+In app:
+1. Choose **Arm** or **Hub**.
+2. Generate or enter Pair PIN.
+3. Approve pairing from Hub and verify connectivity.
 
 ---
 
@@ -42,25 +74,6 @@ Detailed protocol mapping and implementation notes are in:
 
 ---
 
-## Quick start
-
-From repo root:
-
-```powershell
-npm run setup
-npm run dev:companion
-```
-
-Build Windows installer:
-
-```powershell
-npm run build:companion
-```
-
-Cross-platform artifacts are distributed through GitHub Releases.
-
----
-
 ## Releases and installers
 
 See:
@@ -70,6 +83,12 @@ See:
 
 Checksums:
 - `releases/v1.0.0/SHA256SUMS.txt`
+
+---
+
+## Roadmap
+
+See `ROADMAP.md` for current priorities and planned milestones.
 
 ---
 
